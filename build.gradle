@@ -5,23 +5,67 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
-base { archivesName = project.archives_base_name }
+base {
+    archivesName = project.archives_base_name
+}
 
-repositories { maven { url = 'https://maven.fabricmc.net/' }; mavenCentral() }
+repositories {
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
+    mavenCentral()
+}
 
 dependencies {
+    // Minecraft & Mappings
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+
+    // Fabric Loader
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Fabric API (Provides ClientPlayNetworking, Lifecycle, and Client API modules)
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {
-    inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = "UTF-8"
 }
 
 java {
-    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
     withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename "${it}_${project.archives_base_name}", "${it}"
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        // Add publishing repositories here if needed
+    }
 }
