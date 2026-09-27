@@ -10,7 +10,8 @@
     "BlockEntityCullingMixin",
     "ParticleReductionMixin",
     "TitleBrandingMixin",
-    "InventoryScreenMixin"
+    "InventoryScreenMixin",
+    "OptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 0
