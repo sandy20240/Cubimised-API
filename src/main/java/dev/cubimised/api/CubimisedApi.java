@@ -31,6 +31,13 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile int entityDensity = 100;
     public static volatile int chunkViewDistanceCap = 16;
     public static volatile String performanceProfile = "Balanced";
+    /** Android/low-end adaptive mode: aggressively reduces CPU/GPU work when frame time rises. */
+    public static volatile boolean androidTurboEnabled = false;
+    public static volatile int turboMinViewDistance = 6;
+    public static volatile int turboMaxViewDistance = 10;
+    public static volatile int turboMinEntityDensity = 35;
+    public static volatile int turboMaxEntityDensity = 70;
+    public static volatile int adaptiveFrameTarget = 60;
     public static volatile double currentFrameMs = 16.67;
     public static volatile long usedMemoryMb = 0;
     public static volatile long maxMemoryMb = 0;
