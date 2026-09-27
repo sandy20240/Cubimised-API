@@ -3,10 +3,15 @@ package dev.cubimised.api.client;
 import dev.cubimised.api.CubimisedApi;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import org.lwjgl.glfw.GLFW;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.screen.TitleScreen;\nimport net.minecraft.client.MinecraftClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
@@ -16,7 +21,7 @@ public final class CubimisedClient implements ClientModInitializer {
     private static long lastFrameNanos;
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
-    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
+    private static KeyBinding openSettingsKey;\n    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
         welcomeSeen = true;
@@ -50,7 +55,7 @@ public final class CubimisedClient implements ClientModInitializer {
         if (lastFrameNanos != 0L) {
             double frameMs = (now - lastFrameNanos) / 1_000_000.0;
             smoothedFrameMs = smoothedFrameMs * 0.9 + frameMs * 0.1;
-            double targetMs = 1000.0 / Math.max(1, CubimisedApi.targetFps);
+            if (!CubimisedApi.dynamicResolutionEnabled) { CubimisedApi.renderScale = 1.0; lastFrameNanos = now; return; }\n            double targetMs = 1000.0 / Math.max(1, CubimisedApi.targetFps);
             if (smoothedFrameMs > targetMs * 1.08) {
                 CubimisedApi.renderScale = Math.max(CubimisedApi.minScale, CubimisedApi.renderScale - 0.025);
             } else if (smoothedFrameMs < targetMs * 0.88) {
@@ -60,7 +65,7 @@ public final class CubimisedClient implements ClientModInitializer {
         lastFrameNanos = now;
     }
 
-    public static double getRenderScale() {
+    private static final class MinecraftClientHolder { static MinecraftClient client() { return MinecraftClient.getInstance(); } }\n\n    public static double getRenderScale() {
         return Math.max(CubimisedApi.minScale, Math.min(CubimisedApi.maxScale, CubimisedApi.renderScale));
     }
 }
