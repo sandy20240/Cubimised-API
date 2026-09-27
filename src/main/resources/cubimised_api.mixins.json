@@ -12,7 +12,8 @@
     "TitleBrandingMixin",
     "InventoryScreenMixin",
     "OptionsScreenMixin",
-    "WorldRendererCullingMixin"
+    "WorldRendererCullingMixin",
+    "WorldRendererHorizonMixin"
   ],
   "injectors": {
     "defaultRequire": 0
