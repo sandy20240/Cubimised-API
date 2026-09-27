@@ -37,6 +37,7 @@ public final class CubimisedClient implements ClientModInitializer {
     }
 
     @Override public void onInitializeClient() {
+        CubimisedConfig.load();
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
@@ -44,7 +45,9 @@ public final class CubimisedClient implements ClientModInitializer {
             MinecraftClient client = MinecraftClient.getInstance();
             if (CubimisedApi.showFps && client != null) {
                 drawContext.drawTextWithShadow(client.textRenderer,
-                        "Cubimised | FPS: " + client.getCurrentFps(), 6, 6, 0x55FF55);
+                        "Cubimised | FPS: " + client.getCurrentFps() + " | " + String.format(java.util.Locale.ROOT, "%.1f ms", CubimisedApi.currentFrameMs), 6, 6, 0x55FF55);
+                drawContext.drawTextWithShadow(client.textRenderer, "Memory: " + CubimisedApi.usedMemoryMb + " / " + CubimisedApi.maxMemoryMb + " MB", 6, 18, 0xFFFFFF);
+                drawContext.drawTextWithShadow(client.textRenderer, "Entities: " + (client.world == null ? 0 : client.world.getRegularEntityCount()), 6, 30, 0xFFFFFF);
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -69,6 +72,13 @@ public final class CubimisedClient implements ClientModInitializer {
         long now = System.nanoTime();
         if (lastFrameNanos != 0L) {
             double frameMs = (now - lastFrameNanos) / 1_000_000.0;
+            CubimisedApi.currentFrameMs = frameMs;
+            Runtime runtime = Runtime.getRuntime();
+            CubimisedApi.usedMemoryMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+            CubimisedApi.maxMemoryMb = runtime.maxMemory() / (1024 * 1024);
+            if (CubimisedApi.smartBoosterEnabled && frameMs > 1000.0 / Math.max(20, CubimisedApi.targetFps) * 1.3) {
+                CubimisedApi.reduceParticles = true;
+            }
             smoothedFrameMs = smoothedFrameMs * 0.9 + frameMs * 0.1;
             if (!CubimisedApi.dynamicResolutionEnabled) {
                 CubimisedApi.renderScale = 1.0;
