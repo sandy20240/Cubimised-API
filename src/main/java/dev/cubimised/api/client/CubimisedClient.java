@@ -25,6 +25,8 @@ public final class CubimisedClient implements ClientModInitializer {
     private static long lastFrameNanos;
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
+    private static int turboTick;
+    private static int turboViewDistance = -1;
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
@@ -84,6 +86,9 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.setScreen(new WelcomeScreen());
                 return;
             }
+            if (CubimisedApi.androidTurboEnabled) {
+                applyAndroidTurbo(client);
+            }
             if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
                 client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
             }
@@ -94,6 +99,25 @@ public final class CubimisedClient implements ClientModInitializer {
                 ClientPlayNetworking.send(CubimisedApi.CULLING_PREFERENCE_PACKET, packet);
             }
         });
+    }
+
+    private static void applyAndroidTurbo(MinecraftClient client) {
+        if (++turboTick % 20 != 0) return;
+        double frame = CubimisedApi.currentFrameMs;
+        int desired;
+        if (frame > 1000.0 / 45.0) desired = CubimisedApi.turboMinViewDistance;
+        else if (frame > 1000.0 / 60.0) desired = Math.max(CubimisedApi.turboMinViewDistance, 8);
+        else desired = CubimisedApi.turboMaxViewDistance;
+        desired = Math.min(desired, CubimisedApi.chunkViewDistanceCap);
+        if (turboViewDistance != desired) {
+            client.options.getViewDistance().setValue(desired);
+            turboViewDistance = desired;
+        }
+        CubimisedApi.entityDensity = frame > 1000.0 / 50.0 ? CubimisedApi.turboMinEntityDensity : CubimisedApi.turboMaxEntityDensity;
+        CubimisedApi.reduceParticles = frame > 1000.0 / 55.0;
+        CubimisedApi.entityCullingEnabled = true;
+        CubimisedApi.blockEntityCullingEnabled = true;
+        CubimisedApi.updateCullingDistance(desired * 16);
     }
 
     /** Called from the client render mixin once per frame. */
