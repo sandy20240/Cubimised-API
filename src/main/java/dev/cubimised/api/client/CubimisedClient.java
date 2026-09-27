@@ -30,7 +30,7 @@ public final class CubimisedClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
-    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
         welcomeSeen = true;
@@ -77,7 +77,7 @@ public final class CubimisedClient implements ClientModInitializer {
                 }
                 // Keep resource handoff bounded; a future GPU backend will enqueue
                 // uploads here after generating actual section meshes.
-                chunkPipeline.processUploads(2);
+                chunkPipeline.processUploads(CubimisedApi.androidTurboEnabled ? CubimisedApi.renderUploadBudget : 2);
             }
             while (openSettingsKey.wasPressed()) {
                 client.setScreen(new PerformanceScreen(client.currentScreen));
