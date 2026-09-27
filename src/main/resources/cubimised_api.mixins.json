@@ -11,7 +11,8 @@
     "ParticleReductionMixin",
     "TitleBrandingMixin",
     "InventoryScreenMixin",
-    "OptionsScreenMixin"
+    "OptionsScreenMixin",
+    "WorldRendererCullingMixin"
   ],
   "injectors": {
     "defaultRequire": 0
