@@ -2,6 +2,9 @@ package dev.cubimised.api;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -14,7 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class CubimisedApi implements ModInitializer {
     public static final String MOD_ID = "cubimised_api";
     public static final Identifier CULLING_PREFERENCE_PACKET = new Identifier(MOD_ID, "culling_preference");
+    public static final Identifier SERVER_HANDSHAKE_PACKET = new Identifier(MOD_ID, "server_handshake");
+    public static final Identifier CLIENT_HANDSHAKE_PACKET = new Identifier(MOD_ID, "client_handshake");
+    public static final int NETWORK_PROTOCOL_VERSION = 1;
     private static final Map<UUID, Integer> PLAYER_DISTANCES = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> HANDSHAKE_DEADLINES = new ConcurrentHashMap<>();
+    private static final Map<UUID, Boolean> VERIFIED_CLIENTS = new ConcurrentHashMap<>();
     public static volatile double renderScale = 1.0;
     public static volatile double minScale = 0.5;
     public static volatile double maxScale = 1.0;
@@ -59,6 +67,43 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile double gpuPowerWatts = -1.0;
 
     @Override public void onInitialize() {
+        ServerPlayNetworking.registerGlobalReceiver(CLIENT_HANDSHAKE_PACKET, (server, player, handler, buf, responseSender) -> {
+            int version = buf.readVarInt();
+            server.execute(() -> {
+                if (version == NETWORK_PROTOCOL_VERSION) {
+                    VERIFIED_CLIENTS.put(player.getUuid(), Boolean.TRUE);
+                    HANDSHAKE_DEADLINES.remove(player.getUuid());
+                } else {
+                    player.networkHandler.disconnect(Text.literal("Cubimised API protocol mismatch. Server requires protocol " + NETWORK_PROTOCOL_VERSION + "."));
+                }
+            });
+        });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            UUID uuid = handler.player.getUuid();
+            VERIFIED_CLIENTS.remove(uuid);
+            HANDSHAKE_DEADLINES.put(uuid, System.nanoTime() + 5_000_000_000L);
+            var packet = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            packet.writeVarInt(NETWORK_PROTOCOL_VERSION);
+            ServerPlayNetworking.send(handler.player, SERVER_HANDSHAKE_PACKET, packet);
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID uuid = handler.player.getUuid();
+            VERIFIED_CLIENTS.remove(uuid);
+            HANDSHAKE_DEADLINES.remove(uuid);
+            PLAYER_DISTANCES.remove(uuid);
+        });
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            long now = System.nanoTime();
+            HANDSHAKE_DEADLINES.forEach((uuid, deadline) -> {
+                if (now >= deadline && !VERIFIED_CLIENTS.containsKey(uuid)) {
+                    ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+                    if (player != null) {
+                        player.networkHandler.disconnect(Text.literal("Cubimised API is required on both the client and server."));
+                    }
+                    HANDSHAKE_DEADLINES.remove(uuid);
+                }
+            });
+        });
         ServerPlayNetworking.registerGlobalReceiver(CULLING_PREFERENCE_PACKET, (server, player, handler, buf, responseSender) -> {
             int requested = MathHelper.clamp(buf.readVarInt(), 16, 512);
             server.execute(() -> PLAYER_DISTANCES.put(player.getUuid(), requested));
