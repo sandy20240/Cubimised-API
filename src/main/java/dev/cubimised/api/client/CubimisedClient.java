@@ -38,6 +38,7 @@ public final class CubimisedClient implements ClientModInitializer {
 
     @Override public void onInitializeClient() {
         CubimisedConfig.load();
+        RendererManager.getInstance().initialize();
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
