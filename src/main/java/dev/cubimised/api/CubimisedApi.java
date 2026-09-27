@@ -20,6 +20,8 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile double maxScale = 1.0;
     public static volatile int targetFps = 60;
     public static volatile int cullingDistanceBlocks = 128;
+    /** Client-side entity render distance culling toggle. */
+    public static volatile boolean entityCullingEnabled = true;
     public static volatile double maxCullDistSq = 128.0 * 128.0;
 
     @Override public void onInitialize() {
