@@ -40,7 +40,7 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile int adaptiveFrameTarget = 60;
     public static volatile double currentFrameMs = 16.67;
     public static volatile long usedMemoryMb = 0;
-    public static volatile long maxMemoryMb = 0;
+    public static volatile long maxMemoryMb = 0;\n    /** Maximum number of render-thread resource uploads processed in one frame. */\n    public static volatile int renderUploadBudget = 2;
 
     @Override public void onInitialize() {
         ServerPlayNetworking.registerGlobalReceiver(CULLING_PREFERENCE_PACKET, (server, player, handler, buf, responseSender) -> {
