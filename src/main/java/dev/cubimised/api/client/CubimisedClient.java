@@ -32,6 +32,7 @@ public final class CubimisedClient implements ClientModInitializer {
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
     private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();
+    private static final HorizonLodManager horizonLodManager = new HorizonLodManager();
     private static final HorizonLodManager horizonLodManager = new HorizonLodManager();\n    private static KeyBinding performanceMonitorKey;
     private static volatile long serverHandshakeDeadline;
     private static volatile boolean serverHandshakeReceived;
@@ -121,8 +122,10 @@ public final class CubimisedClient implements ClientModInitializer {
             if (CubimisedApi.androidTurboEnabled) {
                 applyAndroidTurbo(client);
                 adaptivePerformance.tick(client);
+                horizonLodManager.tick(client);
             } else {
                 adaptivePerformance.reset();
+                horizonLodManager.tick(client);
             }
             if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
                 client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
