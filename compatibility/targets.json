@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "project": "Cubimised API",
+  "excludedMinecraftVersions": [
+    "1.21.x"
+  ],
+  "targets": [
+    {
+      "minecraft": "1.16.5",
+      "mtr": true,
+      "loaders": [
+        "fabric",
+        "forge"
+      ],
+      "java": 8,
+      "status": "planned"
+    },
+    {
+      "minecraft": "1.18.2",
+      "mtr": true,
+      "loaders": [
+        "fabric",
+        "forge"
+      ],
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "minecraft": "1.19.2",
+      "mtr": true,
+      "loaders": [
+        "fabric",
+        "forge"
+      ],
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "minecraft": "1.20.1",
+      "mtr": true,
+      "loaders": [
+        "fabric",
+        "forge",
+        "neoforge"
+      ],
+      "java": 17,
+      "status": "existing-fabric-baseline"
+    }
+  ],
+  "notes": [
+    "Loader availability must be verified per exact Minecraft patch before publishing.",
+    "NeoForge is listed only for target versions where a compatible NeoForge toolchain exists.",
+    "Minecraft 1.21.x is intentionally excluded until MTR's project support is ready."
+  ]
+}
