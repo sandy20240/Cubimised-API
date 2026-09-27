@@ -42,7 +42,21 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile long usedMemoryMb = 0;
     public static volatile long maxMemoryMb = 0;
     /** Maximum number of render-thread resource uploads processed in one frame. */
-    public static volatile int renderUploadBudget = 2;\n    /** High-frequency performance monitor overlay, toggled with L. */\n    public static volatile boolean performanceMonitorEnabled = false;
+    public static volatile int renderUploadBudget = 2;
+    /** High-frequency performance monitor overlay, toggled with L. */
+    public static volatile boolean performanceMonitorEnabled = false;
+    /** Latest process CPU utilization percentage, or -1 when unavailable. */
+    public static volatile double cpuUsagePercent = -1.0;
+    /** Latest system CPU utilization percentage, or -1 when unavailable. */
+    public static volatile double systemCpuUsagePercent = -1.0;
+    /** Latest player latency in milliseconds, or -1 when unavailable. */
+    public static volatile int pingMs = -1;
+    /** Latest server TPS estimate, or -1 when unavailable client-side. */
+    public static volatile double serverTps = -1.0;
+    /** GPU telemetry is platform-specific and remains unavailable unless a backend provides it. */
+    public static volatile double gpuUsagePercent = -1.0;
+    public static volatile long gpuMemoryMb = -1L;
+    public static volatile double gpuPowerWatts = -1.0;
 
     @Override public void onInitialize() {
         ServerPlayNetworking.registerGlobalReceiver(CULLING_PREFERENCE_PACKET, (server, player, handler, buf, responseSender) -> {
