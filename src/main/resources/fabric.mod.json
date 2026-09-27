@@ -4,13 +4,29 @@
   "version": "${version}",
   "name": "Cubimised API",
   "description": "Dynamic client render scaling and culling preference API for Fabric.",
-  "authors": ["sandy20240"],
+  "authors": [
+    "sandy20240"
+  ],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["dev.cubimised.api.CubimisedApi"],
-    "client": ["dev.cubimised.api.client.CubimisedClient"]
+    "main": [
+      "dev.cubimised.api.CubimisedApi"
+    ],
+    "client": [
+      "dev.cubimised.api.client.CubimisedClient"
+    ]
   },
-  "mixins": ["cubimised_api.mixins.json"],
-  "depends": { "fabricloader": ">=0.15.7", "minecraft": "1.20.1", "java": ">=17", "fabric-api": "*" }
+  "mixins": [
+    "cubimised_api.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.7",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "sodium": "*"
+  }
 }
