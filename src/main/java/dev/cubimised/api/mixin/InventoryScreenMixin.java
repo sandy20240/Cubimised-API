@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin extends Screen {
-    @Shadow protected int x;
-    @Shadow protected int y;
+    @Shadow private int x;
+    @Shadow private int y;
 
     protected InventoryScreenMixin(Text title) { super(title); }
 
