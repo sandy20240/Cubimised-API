@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
+import net.minecraft.client.gui.DrawContext;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,10 +44,10 @@ public final class PerformanceScreen extends Screen {
         List<String> mods=FabricLoader.getInstance().getAllMods().stream().map(m->m.getMetadata().getId().toLowerCase()).filter(id->id.contains("sodium")||id.contains("iris")||id.contains("optifine")||id.contains("indium")||id.contains("canvas")).collect(Collectors.toList());
         return mods.isEmpty() ? "No known renderer mods detected" : mods.size()+" renderer mod(s) detected";
     }
-    @Override public void render(net.minecraft.client.util.math.MatrixStack matrices,int mouseX,int mouseY,float delta) {
-        renderBackground(matrices);
-        drawCenteredText(matrices,textRenderer,title,width/2,18,0xFFFFFF);
-        super.render(matrices,mouseX,mouseY,delta);
+    @Override public void render(DrawContext context,int mouseX,int mouseY,float delta) {
+        renderBackground(context);
+        context.drawCenteredTextWithShadow(textRenderer,title,width/2,18,0xFFFFFF);
+        super.render(context,mouseX,mouseY,delta);
     }
     @Override public void close() { CubimisedConfig.save(); if(client!=null) client.setScreen(parent); }
 }
