@@ -5,15 +5,36 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.gui.screen.TitleScreen;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.IOException;
 
-/** Client-side frame-time controller and preference sync. */
+/** Client-side frame-time controller, preference sync, and first-launch welcome. */
 public final class CubimisedClient implements ClientModInitializer {
     private static long lastFrameNanos;
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
+    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
+
+    public static void markWelcomeSeen() {
+        welcomeSeen = true;
+        Path file = FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt");
+        try {
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, "seen");
+        } catch (IOException e) {
+            System.err.println("[Cubimised API] Could not save welcome preference: " + e.getMessage());
+        }
+    }
 
     @Override public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (!welcomeSeen && client.currentScreen instanceof TitleScreen) {
+                client.setScreen(new WelcomeScreen());
+                return;
+            }
             if (client.player == null || client.world == null) return;
             if (++ticks % 40 == 0) {
                 var packet = PacketByteBufs.create();
