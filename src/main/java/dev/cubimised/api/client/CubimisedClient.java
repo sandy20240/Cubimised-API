@@ -97,7 +97,8 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
             }
             if (client.player == null || client.world == null) return;
-            if (++ticks % 40 == 0) {
+            if (++ticks % 20 == 0) {
+                performanceMonitor.updateTelemetry(client);
                 var packet = PacketByteBufs.create();
                 packet.writeVarInt(CubimisedApi.cullingDistanceBlocks);
                 ClientPlayNetworking.send(CubimisedApi.CULLING_PREFERENCE_PACKET, packet);
@@ -124,8 +125,17 @@ public final class CubimisedClient implements ClientModInitializer {
         CubimisedApi.updateCullingDistance(desired * 16);
     }
 
+    private static String formatTelemetry(double value) {
+        return value < 0.0 ? "n/a" : String.format(java.util.Locale.ROOT, "%.0f", value);
+    }
+
+    private static String formatTelemetry(int value) {
+        return value < 0 ? "n/a" : Integer.toString(value) + " ms";
+    }
+
     /** Called from the client render mixin once per frame. */
     public static void recordFrame() {
+        performanceMonitor.recordFrame();
         long now = System.nanoTime();
         if (lastFrameNanos != 0L) {
             double frameMs = (now - lastFrameNanos) / 1_000_000.0;
