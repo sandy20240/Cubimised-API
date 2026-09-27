@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
@@ -25,9 +26,17 @@ public final class CubimisedClient implements ClientModInitializer {
     private static long lastFrameNanos;
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
+    private static int turboTick;
+    private static int turboViewDistance = -1;
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();
+    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();
+    private static final HorizonLodManager horizonLodManager = new HorizonLodManager();
+    private static KeyBinding performanceMonitorKey;
+    private static volatile long serverHandshakeDeadline;
+    private static volatile boolean serverHandshakeReceived;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
@@ -47,6 +56,28 @@ public final class CubimisedClient implements ClientModInitializer {
         MinecraftClient minecraft = MinecraftClient.getInstance();
         int workers = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1));
         chunkPipeline = new ChunkRendererPipeline(workers, 128, minecraft::execute);
+        ClientPlayNetworking.registerGlobalReceiver(CubimisedApi.SERVER_HANDSHAKE_PACKET, (client, handler, buf, responseSender) -> {
+            int version = buf.readVarInt();
+            client.execute(() -> {
+                if (version != CubimisedApi.NETWORK_PROTOCOL_VERSION) {
+                    client.disconnect();
+                    return;
+                }
+                var response = PacketByteBufs.create();
+                response.writeVarInt(CubimisedApi.NETWORK_PROTOCOL_VERSION);
+                responseSender.sendPacket(CubimisedApi.CLIENT_HANDSHAKE_PACKET, response);
+                serverHandshakeReceived = true;
+                serverHandshakeDeadline = 0L;
+            });
+        });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            serverHandshakeReceived = false;
+            serverHandshakeDeadline = System.nanoTime() + 5_000_000_000L;
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            serverHandshakeReceived = false;
+            serverHandshakeDeadline = 0L;
+        });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             if (chunkPipeline != null) {
                 chunkPipeline.close();
@@ -54,6 +85,9 @@ public final class CubimisedClient implements ClientModInitializer {
             }
             lastWorld = null;
         });
+        performanceMonitorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.cubimised_api.performance_monitor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_L,
+                "category.cubimised_api"));
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
@@ -65,9 +99,26 @@ public final class CubimisedClient implements ClientModInitializer {
                 drawContext.drawTextWithShadow(client.textRenderer, "Memory: " + CubimisedApi.usedMemoryMb + " / " + CubimisedApi.maxMemoryMb + " MB", 6, 18, 0xFFFFFF);
                 drawContext.drawTextWithShadow(client.textRenderer, "Entities: " + (client.world == null ? 0 : client.world.getRegularEntityCount()), 6, 30, 0xFFFFFF);
                 drawContext.drawTextWithShadow(client.textRenderer, "Renderer: " + RendererManager.getInstance().getActiveRendererId() + " (" + RendererManager.getInstance().getStatus().name() + ")", 6, 42, 0xAAAAFF);
+                if (CubimisedApi.performanceMonitorEnabled) {
+                    int y = 58;
+                    drawContext.drawTextWithShadow(client.textRenderer, "PERFORMANCE MONITOR [L]", 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "FPS %.0f | AVG %.0f | 1%% %.0f | 0.1%% %.0f", performanceMonitor.getMaxFps(), performanceMonitor.getAverageFps(), performanceMonitor.getOnePercentLow(), performanceMonitor.getPointOnePercentLow()), 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "Frame %.2f ms | Samples %d", CubimisedApi.currentFrameMs, performanceMonitor.getSampleCount()), 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, "CPU: n/a | GPU: n/a | RAM: " + CubimisedApi.usedMemoryMb + "/" + CubimisedApi.maxMemoryMb + " MB", 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, "Network: ping/tps telemetry pending", 6, y, 0xAAAAAA);
+                }
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (serverHandshakeDeadline != 0L && !serverHandshakeReceived && System.nanoTime() >= serverHandshakeDeadline) {
+                serverHandshakeDeadline = 0L;
+                client.setScreen(null); client.disconnect();
+                return;
+            }
             if (chunkPipeline != null) {
                 if (lastWorld != client.world) {
                     chunkPipeline.onWorldChanged();
@@ -75,7 +126,11 @@ public final class CubimisedClient implements ClientModInitializer {
                 }
                 // Keep resource handoff bounded; a future GPU backend will enqueue
                 // uploads here after generating actual section meshes.
-                chunkPipeline.processUploads(2);
+                chunkPipeline.processUploads(CubimisedApi.androidTurboEnabled ? CubimisedApi.renderUploadBudget : 2);
+            }
+            while (performanceMonitorKey.wasPressed()) {
+                CubimisedApi.performanceMonitorEnabled = !CubimisedApi.performanceMonitorEnabled;
+                CubimisedConfig.save();
             }
             while (openSettingsKey.wasPressed()) {
                 client.setScreen(new PerformanceScreen(client.currentScreen));
@@ -84,11 +139,20 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.setScreen(new WelcomeScreen());
                 return;
             }
+            if (CubimisedApi.androidTurboEnabled) {
+                applyAndroidTurbo(client);
+                adaptivePerformance.tick(client);
+                horizonLodManager.tick(client);
+            } else {
+                adaptivePerformance.reset();
+                horizonLodManager.tick(client);
+            }
             if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
                 client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
             }
             if (client.player == null || client.world == null) return;
-            if (++ticks % 40 == 0) {
+            if (++ticks % 20 == 0) {
+                performanceMonitor.updateTelemetry(client);
                 var packet = PacketByteBufs.create();
                 packet.writeVarInt(CubimisedApi.cullingDistanceBlocks);
                 ClientPlayNetworking.send(CubimisedApi.CULLING_PREFERENCE_PACKET, packet);
@@ -96,8 +160,36 @@ public final class CubimisedClient implements ClientModInitializer {
         });
     }
 
+    private static void applyAndroidTurbo(MinecraftClient client) {
+        if (++turboTick % 20 != 0) return;
+        double frame = CubimisedApi.currentFrameMs;
+        int desired;
+        if (frame > 1000.0 / 45.0) desired = CubimisedApi.turboMinViewDistance;
+        else if (frame > 1000.0 / 60.0) desired = Math.max(CubimisedApi.turboMinViewDistance, 8);
+        else desired = CubimisedApi.turboMaxViewDistance;
+        desired = Math.min(desired, CubimisedApi.chunkViewDistanceCap);
+        if (turboViewDistance != desired) {
+            client.options.getViewDistance().setValue(desired);
+            turboViewDistance = desired;
+        }
+        CubimisedApi.entityDensity = frame > 1000.0 / 50.0 ? CubimisedApi.turboMinEntityDensity : CubimisedApi.turboMaxEntityDensity;
+        CubimisedApi.reduceParticles = frame > 1000.0 / 55.0;
+        CubimisedApi.entityCullingEnabled = true;
+        CubimisedApi.blockEntityCullingEnabled = true;
+        CubimisedApi.updateCullingDistance(desired * 16);
+    }
+
+    private static String formatTelemetry(double value) {
+        return value < 0.0 ? "n/a" : String.format(java.util.Locale.ROOT, "%.0f", value);
+    }
+
+    private static String formatTelemetry(int value) {
+        return value < 0 ? "n/a" : Integer.toString(value) + " ms";
+    }
+
     /** Called from the client render mixin once per frame. */
     public static void recordFrame() {
+        performanceMonitor.recordFrame();
         long now = System.nanoTime();
         if (lastFrameNanos != 0L) {
             double frameMs = (now - lastFrameNanos) / 1_000_000.0;

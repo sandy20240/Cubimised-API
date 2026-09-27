@@ -9,7 +9,11 @@
     "LivingEntityCullingMixin",
     "BlockEntityCullingMixin",
     "ParticleReductionMixin",
-    "TitleBrandingMixin"
+    "TitleBrandingMixin",
+    "InventoryScreenMixin",
+    "OptionsScreenMixin",
+    "WorldRendererCullingMixin",
+    "WorldRendererHorizonMixin"
   ],
   "injectors": {
     "defaultRequire": 0
