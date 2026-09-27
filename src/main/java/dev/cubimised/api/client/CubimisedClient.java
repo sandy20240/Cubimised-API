@@ -60,7 +60,7 @@ public final class CubimisedClient implements ClientModInitializer {
             int version = buf.readVarInt();
             client.execute(() -> {
                 if (version != CubimisedApi.NETWORK_PROTOCOL_VERSION) {
-                    client.setScreen(null); client.disconnect();
+                    client.disconnect();
                     return;
                 }
                 var response = PacketByteBufs.create();
