@@ -31,9 +31,10 @@ public final class CubimisedClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
-    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();
+    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();
     private static final HorizonLodManager horizonLodManager = new HorizonLodManager();
-    private static final HorizonLodManager horizonLodManager = new HorizonLodManager();\n    private static KeyBinding performanceMonitorKey;
+    private static KeyBinding performanceMonitorKey;
     private static volatile long serverHandshakeDeadline;
     private static volatile boolean serverHandshakeReceived;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
@@ -84,7 +85,10 @@ public final class CubimisedClient implements ClientModInitializer {
             }
             lastWorld = null;
         });
-        performanceMonitorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(\n                "key.cubimised_api.performance_monitor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_L,\n                "category.cubimised_api"));\n        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        performanceMonitorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.cubimised_api.performance_monitor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_L,
+                "category.cubimised_api"));
+        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
         HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
@@ -94,7 +98,19 @@ public final class CubimisedClient implements ClientModInitializer {
                         "Cubimised | FPS: " + client.getCurrentFps() + " | " + String.format(java.util.Locale.ROOT, "%.1f ms", CubimisedApi.currentFrameMs), 6, 6, 0x55FF55);
                 drawContext.drawTextWithShadow(client.textRenderer, "Memory: " + CubimisedApi.usedMemoryMb + " / " + CubimisedApi.maxMemoryMb + " MB", 6, 18, 0xFFFFFF);
                 drawContext.drawTextWithShadow(client.textRenderer, "Entities: " + (client.world == null ? 0 : client.world.getRegularEntityCount()), 6, 30, 0xFFFFFF);
-                drawContext.drawTextWithShadow(client.textRenderer, "Renderer: " + RendererManager.getInstance().getActiveRendererId() + " (" + RendererManager.getInstance().getStatus().name() + ")", 6, 42, 0xAAAAFF);\n                if (CubimisedApi.performanceMonitorEnabled) {\n                    int y = 58;\n                    drawContext.drawTextWithShadow(client.textRenderer, "PERFORMANCE MONITOR [L]", 6, y, 0xFFFFFF);\n                    y += 12;\n                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "FPS %.0f | AVG %.0f | 1%% %.0f | 0.1%% %.0f", performanceMonitor.getMaxFps(), performanceMonitor.getAverageFps(), performanceMonitor.getOnePercentLow(), performanceMonitor.getPointOnePercentLow()), 6, y, 0xFFFFFF);\n                    y += 12;\n                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "Frame %.2f ms | Samples %d", CubimisedApi.currentFrameMs, performanceMonitor.getSampleCount()), 6, y, 0xFFFFFF);\n                    y += 12;\n                    drawContext.drawTextWithShadow(client.textRenderer, "CPU: n/a | GPU: n/a | RAM: " + CubimisedApi.usedMemoryMb + "/" + CubimisedApi.maxMemoryMb + " MB", 6, y, 0xFFFFFF);\n                    y += 12;\n                    drawContext.drawTextWithShadow(client.textRenderer, "Network: ping/tps telemetry pending", 6, y, 0xAAAAAA);\n                }
+                drawContext.drawTextWithShadow(client.textRenderer, "Renderer: " + RendererManager.getInstance().getActiveRendererId() + " (" + RendererManager.getInstance().getStatus().name() + ")", 6, 42, 0xAAAAFF);
+                if (CubimisedApi.performanceMonitorEnabled) {
+                    int y = 58;
+                    drawContext.drawTextWithShadow(client.textRenderer, "PERFORMANCE MONITOR [L]", 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "FPS %.0f | AVG %.0f | 1%% %.0f | 0.1%% %.0f", performanceMonitor.getMaxFps(), performanceMonitor.getAverageFps(), performanceMonitor.getOnePercentLow(), performanceMonitor.getPointOnePercentLow()), 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, String.format(java.util.Locale.ROOT, "Frame %.2f ms | Samples %d", CubimisedApi.currentFrameMs, performanceMonitor.getSampleCount()), 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, "CPU: n/a | GPU: n/a | RAM: " + CubimisedApi.usedMemoryMb + "/" + CubimisedApi.maxMemoryMb + " MB", 6, y, 0xFFFFFF);
+                    y += 12;
+                    drawContext.drawTextWithShadow(client.textRenderer, "Network: ping/tps telemetry pending", 6, y, 0xAAAAAA);
+                }
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -112,7 +128,11 @@ public final class CubimisedClient implements ClientModInitializer {
                 // uploads here after generating actual section meshes.
                 chunkPipeline.processUploads(CubimisedApi.androidTurboEnabled ? CubimisedApi.renderUploadBudget : 2);
             }
-            while (performanceMonitorKey.wasPressed()) {\n                CubimisedApi.performanceMonitorEnabled = !CubimisedApi.performanceMonitorEnabled;\n                CubimisedConfig.save();\n            }\n            while (openSettingsKey.wasPressed()) {
+            while (performanceMonitorKey.wasPressed()) {
+                CubimisedApi.performanceMonitorEnabled = !CubimisedApi.performanceMonitorEnabled;
+                CubimisedConfig.save();
+            }
+            while (openSettingsKey.wasPressed()) {
                 client.setScreen(new PerformanceScreen(client.currentScreen));
             }
             if (!welcomeSeen && client.currentScreen instanceof TitleScreen) {
