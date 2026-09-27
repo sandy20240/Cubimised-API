@@ -88,6 +88,9 @@ public final class CubimisedClient implements ClientModInitializer {
             }
             if (CubimisedApi.androidTurboEnabled) {
                 applyAndroidTurbo(client);
+                adaptivePerformance.tick(client);
+            } else {
+                adaptivePerformance.reset();
             }
             if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
                 client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
