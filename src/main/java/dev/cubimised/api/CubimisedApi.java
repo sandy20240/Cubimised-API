@@ -27,6 +27,13 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile boolean blockEntityCullingEnabled = true;
     public static volatile boolean dynamicResolutionEnabled = false;
     public static volatile double maxCullDistSq = 128.0 * 128.0;
+    public static volatile boolean smartBoosterEnabled = true;
+    public static volatile int entityDensity = 100;
+    public static volatile int chunkViewDistanceCap = 16;
+    public static volatile String performanceProfile = "Balanced";
+    public static volatile double currentFrameMs = 16.67;
+    public static volatile long usedMemoryMb = 0;
+    public static volatile long maxMemoryMb = 0;
 
     @Override public void onInitialize() {
         ServerPlayNetworking.registerGlobalReceiver(CULLING_PREFERENCE_PACKET, (server, player, handler, buf, responseSender) -> {
