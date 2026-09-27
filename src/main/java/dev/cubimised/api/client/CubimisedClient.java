@@ -1,6 +1,8 @@
 package dev.cubimised.api.client;
 
 import dev.cubimised.api.CubimisedApi;
+import dev.cubimised.api.client.renderer.chunk.ChunkRendererPipeline;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -23,6 +25,8 @@ public final class CubimisedClient implements ClientModInitializer {
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
     private static KeyBinding openSettingsKey;
+    private static ChunkRendererPipeline chunkPipeline;
+    private static net.minecraft.client.world.ClientWorld lastWorld;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
@@ -39,6 +43,16 @@ public final class CubimisedClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
         CubimisedConfig.load();
         RendererManager.getInstance().initialize();
+        MinecraftClient minecraft = MinecraftClient.getInstance();
+        int workers = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1));
+        chunkPipeline = new ChunkRendererPipeline(workers, 128, minecraft::execute);
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            if (chunkPipeline != null) {
+                chunkPipeline.close();
+                chunkPipeline = null;
+            }
+            lastWorld = null;
+        });
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
@@ -53,6 +67,15 @@ public final class CubimisedClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (chunkPipeline != null) {
+                if (lastWorld != client.world) {
+                    chunkPipeline.onWorldChanged();
+                    lastWorld = client.world;
+                }
+                // Keep resource handoff bounded; a future GPU backend will enqueue
+                // uploads here after generating actual section meshes.
+                chunkPipeline.processUploads(2);
+            }
             while (openSettingsKey.wasPressed()) {
                 client.setScreen(new PerformanceScreen(client.currentScreen));
             }
