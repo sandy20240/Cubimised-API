@@ -30,7 +30,8 @@ public final class CubimisedClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
-    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();
+    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
         welcomeSeen = true;
