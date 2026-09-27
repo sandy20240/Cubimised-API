@@ -4,7 +4,10 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "MinecraftClientMixin",
-    "LivingEntityCullingMixin"
+    "LivingEntityCullingMixin",
+    "BlockEntityCullingMixin",
+    "ParticleReductionMixin",
+    "TitleBrandingMixin"
   ],
   "injectors": {
     "defaultRequire": 1
