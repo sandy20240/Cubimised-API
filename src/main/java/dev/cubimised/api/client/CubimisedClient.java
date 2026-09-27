@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
@@ -31,6 +32,8 @@ public final class CubimisedClient implements ClientModInitializer {
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
     private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();\n    private static KeyBinding performanceMonitorKey;
+    private static volatile long serverHandshakeDeadline;
+    private static volatile boolean serverHandshakeReceived;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
@@ -50,6 +53,28 @@ public final class CubimisedClient implements ClientModInitializer {
         MinecraftClient minecraft = MinecraftClient.getInstance();
         int workers = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1));
         chunkPipeline = new ChunkRendererPipeline(workers, 128, minecraft::execute);
+        ClientPlayNetworking.registerGlobalReceiver(CubimisedApi.SERVER_HANDSHAKE_PACKET, (client, handler, buf, responseSender) -> {
+            int version = buf.readVarInt();
+            client.execute(() -> {
+                if (version != CubimisedApi.NETWORK_PROTOCOL_VERSION) {
+                    client.disconnect(net.minecraft.text.Text.literal("Cubimised API protocol mismatch with the server."));
+                    return;
+                }
+                var response = PacketByteBufs.create();
+                response.writeVarInt(CubimisedApi.NETWORK_PROTOCOL_VERSION);
+                responseSender.sendPacket(CubimisedApi.CLIENT_HANDSHAKE_PACKET, response);
+                serverHandshakeReceived = true;
+                serverHandshakeDeadline = 0L;
+            });
+        });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            serverHandshakeReceived = false;
+            serverHandshakeDeadline = System.nanoTime() + 5_000_000_000L;
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            serverHandshakeReceived = false;
+            serverHandshakeDeadline = 0L;
+        });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             if (chunkPipeline != null) {
                 chunkPipeline.close();
@@ -71,6 +96,11 @@ public final class CubimisedClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (serverHandshakeDeadline != 0L && !serverHandshakeReceived && System.nanoTime() >= serverHandshakeDeadline) {
+                serverHandshakeDeadline = 0L;
+                client.disconnect(net.minecraft.text.Text.literal("Cubimised API is required on this server. Install/enable it on the server."));
+                return;
+            }
             if (chunkPipeline != null) {
                 if (lastWorld != client.world) {
                     chunkPipeline.onWorldChanged();
