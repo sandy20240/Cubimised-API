@@ -1,6 +1,7 @@
 package dev.cubimised.api.client;
 
 import dev.cubimised.api.CubimisedApi;
+import dev.cubimised.api.client.renderer.RendererManager;
 import dev.cubimised.api.client.renderer.chunk.ChunkRendererPipeline;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.api.ClientModInitializer;
