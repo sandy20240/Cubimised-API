@@ -51,6 +51,12 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile long maxMemoryMb = 0;
     /** Maximum number of render-thread resource uploads processed in one frame. */
     public static volatile int renderUploadBudget = 2;
+    /** Built-in low-detail distant terrain/horizon system. */
+    public static volatile boolean builtInHorizonsEnabled = true;
+    /** Maximum distance, in chunks, covered by low-detail horizon data. */
+    public static volatile int horizonRadiusChunks = 96;
+    /** Horizon LOD detail: 1 = highest, larger values = cheaper/coarser. */
+    public static volatile int horizonLodStep = 4;
     /** High-frequency performance monitor overlay, toggled with L. */
     public static volatile boolean performanceMonitorEnabled = false;
     /** Latest process CPU utilization percentage, or -1 when unavailable. */
