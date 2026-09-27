@@ -31,7 +31,7 @@ public abstract class LivingEntityCullingMixin {
             return;
         }
 
-        double distance = CubimisedApi.cullingDistanceBlocks;
+        double distance = CubimisedApi.cullingDistanceBlocks * (CubimisedApi.entityDensity / 100.0);
         if (entity.squaredDistanceTo(client.player) > distance * distance) {
             ci.cancel();
         }
