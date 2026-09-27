@@ -30,7 +30,7 @@ public final class CubimisedClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
-    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();\n    private static KeyBinding performanceMonitorKey;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
@@ -57,7 +57,7 @@ public final class CubimisedClient implements ClientModInitializer {
             }
             lastWorld = null;
         });
-        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        performanceMonitorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(\n                "key.cubimised_api.performance_monitor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_L,\n                "category.cubimised_api"));\n        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
         HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
@@ -80,7 +80,7 @@ public final class CubimisedClient implements ClientModInitializer {
                 // uploads here after generating actual section meshes.
                 chunkPipeline.processUploads(CubimisedApi.androidTurboEnabled ? CubimisedApi.renderUploadBudget : 2);
             }
-            while (openSettingsKey.wasPressed()) {
+            while (performanceMonitorKey.wasPressed()) {\n                CubimisedApi.performanceMonitorEnabled = !CubimisedApi.performanceMonitorEnabled;\n                CubimisedConfig.save();\n            }\n            while (openSettingsKey.wasPressed()) {
                 client.setScreen(new PerformanceScreen(client.currentScreen));
             }
             if (!welcomeSeen && client.currentScreen instanceof TitleScreen) {
