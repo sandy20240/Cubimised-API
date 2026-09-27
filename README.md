@@ -163,6 +163,18 @@ The repository's GitHub Actions workflow also builds the project when changes ar
 - **Visual effects look different:** Turn off Reduced Particles or the relevant culling option in the Cubimised menu.
 - **A rendering mod behaves unexpectedly:** Test with other rendering/performance mods disabled, one at a time, and share the relevant log with a bug report.
 
+## Credits — Admin Team
+
+Cubimised API is maintained with the help of the admin team:
+
+- **Sandy** — Creator
+- **Volted**
+- **MatMatOfficial**
+- **Waterberry**
+- **Curt**
+
+Thank you to everyone contributing to the project and helping shape Cubimised API.
+
 ## Contributing and feedback
 
 Bug reports, suggestions, and testing feedback are welcome through [GitHub Issues](https://github.com/sandy20240/Cubimised-API/issues). When reporting a problem, include:
