@@ -3,7 +3,7 @@
   "id": "cubimised_api",
   "version": "${version}",
   "name": "Cubimised API",
-  "description": "Dynamic client render scaling and culling preference API for Fabric.",
+  "description": "Performance optimization API for Minecraft 1.20.1 Fabric, with adaptive client tools and broad mod compatibility including Sodium.",
   "authors": [
     "sandy20240"
   ],
@@ -27,9 +27,7 @@
     "fabric-api": "*"
   },
   "suggests": {
-    "ferritecore": "*"
-  },
-  "breaks": {
+    "ferritecore": "*",
     "sodium": "*"
   }
 }
