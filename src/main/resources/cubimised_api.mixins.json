@@ -1,5 +1,7 @@
 {
   "required": true,
+  "minVersion": "0.8",
+  "priority": 900,
   "package": "dev.cubimised.api.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
@@ -10,6 +12,6 @@
     "TitleBrandingMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }
