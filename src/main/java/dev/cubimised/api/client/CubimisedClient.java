@@ -58,8 +58,8 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.setScreen(new WelcomeScreen());
                 return;
             }
-            if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > CubimisedApi.chunkViewDistanceCap) {
-                client.options.getViewDistance().setValue(CubimisedApi.chunkViewDistanceCap);
+            if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
+                client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
             }
             if (client.player == null || client.world == null) return;
             if (++ticks % 40 == 0) {
