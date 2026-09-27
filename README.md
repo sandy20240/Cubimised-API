@@ -10,7 +10,7 @@ Cubimised API brings performance controls, lightweight telemetry, and configurab
 
 Minecraft performance can vary widely depending on hardware, world complexity, render distance, entities, particles, and installed mods. Cubimised API aims to provide a simple place to monitor a few useful runtime statistics and quickly switch between performance preferences.
 
-The mod is currently built for **Minecraft 1.20.1**, **Fabric Loader**, and **Java 17**.
+The mod is currently built for **Minecraft 1.20.1**, **Fabric Loader**, and **Java 17**. **Sodium is intentionally incompatible with Cubimised API** because Cubimised currently uses its own renderer-level mixins. Fabric Loader will reject a setup containing Sodium. FerriteCore is an optional recommended companion for memory optimization.
 
 ## Goals
 
@@ -35,7 +35,7 @@ The mod is currently built for **Minecraft 1.20.1**, **Fabric Loader**, and **Ja
 | Entity / block-entity culling | Optional distance-based culling experiments intended to reduce rendering work at a distance. |
 | Particle reduction | Optional particle suppression intended to reduce particle workload. This may change visual effects. |
 | Config save system | Saves Cubimised settings in the Fabric config directory to restore them on subsequent launches. |
-| Mod compatibility information | Lists selected rendering/performance-related mods detected in the Fabric mod list. Detection is informational and does not prove compatibility or incompatibility. |
+| Mod compatibility information | Lists selected rendering/performance-related mods detected in the Fabric mod list. Detection is informational. Sodium is declared incompatible at the Fabric Loader level. |
 | Dynamic resolution | Experimental setting/state. Actual framebuffer/render-resolution scaling is not fully integrated yet; enabling it may not produce a visible resolution change. |
 
 Feature behavior can change between commits. A successful Gradle build confirms compilation and packaging, not that every feature has been tested in a running Minecraft client.
@@ -58,6 +58,18 @@ Feature behavior can change between commits. A successful Gradle build confirms 
 5. Launch the Fabric 1.20.1 profile.
 
 Only use JARs produced for the matching Minecraft and Fabric versions. If no downloadable artifact or release is available, build it from source using the steps below.
+
+## Compatibility and recommended pairing
+
+### Sodium
+
+Cubimised API is intentionally declared incompatible with Sodium for the current 1.20.1 architecture. Sodium replaces major parts of Minecraft's rendering pipeline, while Cubimised currently uses renderer-level mixins of its own. The mod therefore declares Sodium in Fabric's `breaks` metadata so the loader refuses the combination instead of allowing a potentially unstable mixed renderer setup.
+
+This is a compatibility restriction, not a claim that Sodium is a poor performance mod. Sodium's 1.20.1 releases are themselves designed as high-performance rendering replacements. citeturn0search1turn0search0
+
+### FerriteCore
+
+FerriteCore is an optional companion. It focuses on reducing Minecraft's memory usage rather than replacing the renderer, making it a complementary type of optimization for Cubimised's client performance tools. FerriteCore supports Fabric and Minecraft 1.20.x releases. citeturn0search8
 
 ## How to use Cubimised API
 
