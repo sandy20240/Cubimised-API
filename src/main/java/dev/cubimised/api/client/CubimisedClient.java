@@ -60,7 +60,7 @@ public final class CubimisedClient implements ClientModInitializer {
             int version = buf.readVarInt();
             client.execute(() -> {
                 if (version != CubimisedApi.NETWORK_PROTOCOL_VERSION) {
-                    client.disconnect(net.minecraft.text.Text.literal("Cubimised API protocol mismatch with the server."));
+                    client.setScreen(null); client.disconnect();
                     return;
                 }
                 var response = PacketByteBufs.create();
@@ -116,7 +116,7 @@ public final class CubimisedClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (serverHandshakeDeadline != 0L && !serverHandshakeReceived && System.nanoTime() >= serverHandshakeDeadline) {
                 serverHandshakeDeadline = 0L;
-                client.disconnect(net.minecraft.text.Text.literal("Cubimised API is required on this server. Install/enable it on the server."));
+                client.setScreen(null); client.disconnect();
                 return;
             }
             if (chunkPipeline != null) {
