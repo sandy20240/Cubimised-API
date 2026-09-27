@@ -49,6 +49,7 @@ public final class CubimisedClient implements ClientModInitializer {
                         "Cubimised | FPS: " + client.getCurrentFps() + " | " + String.format(java.util.Locale.ROOT, "%.1f ms", CubimisedApi.currentFrameMs), 6, 6, 0x55FF55);
                 drawContext.drawTextWithShadow(client.textRenderer, "Memory: " + CubimisedApi.usedMemoryMb + " / " + CubimisedApi.maxMemoryMb + " MB", 6, 18, 0xFFFFFF);
                 drawContext.drawTextWithShadow(client.textRenderer, "Entities: " + (client.world == null ? 0 : client.world.getRegularEntityCount()), 6, 30, 0xFFFFFF);
+                drawContext.drawTextWithShadow(client.textRenderer, "Renderer: " + RendererManager.getInstance().getActiveRendererId() + " (" + RendererManager.getInstance().getStatus().name() + ")", 6, 42, 0xAAAAFF);
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
