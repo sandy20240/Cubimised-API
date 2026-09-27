@@ -31,7 +31,8 @@ public final class CubimisedClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static ChunkRendererPipeline chunkPipeline;
     private static net.minecraft.client.world.ClientWorld lastWorld;
-    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();\n    private static KeyBinding performanceMonitorKey;
+    private static final AdaptivePerformanceController adaptivePerformance = new AdaptivePerformanceController();\n    private static final PerformanceMonitor performanceMonitor = new PerformanceMonitor();
+    private static final HorizonLodManager horizonLodManager = new HorizonLodManager();\n    private static KeyBinding performanceMonitorKey;
     private static volatile long serverHandshakeDeadline;
     private static volatile boolean serverHandshakeReceived;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
