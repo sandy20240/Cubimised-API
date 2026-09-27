@@ -58,7 +58,10 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.setScreen(new WelcomeScreen());
                 return;
             }
-            if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > CubimisedApi.chunkViewDistanceCap) {\n                client.options.getViewDistance().setValue(CubimisedApi.chunkViewDistanceCap);\n            }\n            if (client.player == null || client.world == null) return;
+            if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > CubimisedApi.chunkViewDistanceCap) {
+                client.options.getViewDistance().setValue(CubimisedApi.chunkViewDistanceCap);
+            }
+            if (client.player == null || client.world == null) return;
             if (++ticks % 40 == 0) {
                 var packet = PacketByteBufs.create();
                 packet.writeVarInt(CubimisedApi.cullingDistanceBlocks);
