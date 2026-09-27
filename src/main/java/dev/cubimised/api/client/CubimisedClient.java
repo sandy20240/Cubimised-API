@@ -5,23 +5,25 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import org.lwjgl.glfw.GLFW;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.screen.TitleScreen;\nimport net.minecraft.client.MinecraftClient;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import org.lwjgl.glfw.GLFW;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
 
-/** Client-side frame-time controller, preference sync, and first-launch welcome. */
+/** Client-side frame-time controller, preference sync, welcome screen, and beta HUD/settings. */
 public final class CubimisedClient implements ClientModInitializer {
     private static long lastFrameNanos;
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
-    private static KeyBinding openSettingsKey;\n    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
+    private static KeyBinding openSettingsKey;
+    private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
         welcomeSeen = true;
@@ -35,7 +37,20 @@ public final class CubimisedClient implements ClientModInitializer {
     }
 
     @Override public void onInitializeClient() {
+        openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
+                "category.cubimised_api"));
+        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (CubimisedApi.showFps && client != null) {
+                drawContext.drawTextWithShadow(client.textRenderer,
+                        "Cubimised | FPS: " + client.getCurrentFps(), 6, 6, 0x55FF55);
+            }
+        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (openSettingsKey.wasPressed()) {
+                client.setScreen(new PerformanceScreen(client.currentScreen));
+            }
             if (!welcomeSeen && client.currentScreen instanceof TitleScreen) {
                 client.setScreen(new WelcomeScreen());
                 return;
@@ -55,7 +70,12 @@ public final class CubimisedClient implements ClientModInitializer {
         if (lastFrameNanos != 0L) {
             double frameMs = (now - lastFrameNanos) / 1_000_000.0;
             smoothedFrameMs = smoothedFrameMs * 0.9 + frameMs * 0.1;
-            if (!CubimisedApi.dynamicResolutionEnabled) { CubimisedApi.renderScale = 1.0; lastFrameNanos = now; return; }\n            double targetMs = 1000.0 / Math.max(1, CubimisedApi.targetFps);
+            if (!CubimisedApi.dynamicResolutionEnabled) {
+                CubimisedApi.renderScale = 1.0;
+                lastFrameNanos = now;
+                return;
+            }
+            double targetMs = 1000.0 / Math.max(1, CubimisedApi.targetFps);
             if (smoothedFrameMs > targetMs * 1.08) {
                 CubimisedApi.renderScale = Math.max(CubimisedApi.minScale, CubimisedApi.renderScale - 0.025);
             } else if (smoothedFrameMs < targetMs * 0.88) {
@@ -65,7 +85,7 @@ public final class CubimisedClient implements ClientModInitializer {
         lastFrameNanos = now;
     }
 
-    private static final class MinecraftClientHolder { static MinecraftClient client() { return MinecraftClient.getInstance(); } }\n\n    public static double getRenderScale() {
+    public static double getRenderScale() {
         return Math.max(CubimisedApi.minScale, Math.min(CubimisedApi.maxScale, CubimisedApi.renderScale));
     }
 }
