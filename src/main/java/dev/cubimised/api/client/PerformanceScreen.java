@@ -1,41 +1,52 @@
 package dev.cubimised.api.client;
 
 import dev.cubimised.api.CubimisedApi;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
+import java.util.List;
+import java.util.stream.Collectors;
 
-/** In-game controls for Cubimised's client-side beta options. */
+/** In-game performance controls, profiles, and compatibility information. */
 public final class PerformanceScreen extends Screen {
     private final Screen parent;
-    public PerformanceScreen(Screen parent) {
-        super(Text.literal("Cubimised Performance"));
-        this.parent = parent;
-    }
+    public PerformanceScreen(Screen parent) { super(Text.literal("Cubimised V1.1 Performance")); this.parent = parent; }
 
     @Override protected void init() {
-        int x = this.width / 2 - 105;
-        int y = this.height / 4;
-        addToggle("FPS Counter", () -> CubimisedApi.showFps, v -> CubimisedApi.showFps = v, x, y);
-        addToggle("Entity Culling", () -> CubimisedApi.entityCullingEnabled, v -> CubimisedApi.entityCullingEnabled = v, x, y + 25);
-        addToggle("Block Entity Culling", () -> CubimisedApi.blockEntityCullingEnabled, v -> CubimisedApi.blockEntityCullingEnabled = v, x, y + 50);
-        addToggle("Reduced Particles", () -> CubimisedApi.reduceParticles, v -> CubimisedApi.reduceParticles = v, x, y + 75);
-        addToggle("Dynamic Resolution (experimental)", () -> CubimisedApi.dynamicResolutionEnabled, v -> CubimisedApi.dynamicResolutionEnabled = v, x, y + 100);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> close()).dimensions(x, y + 135, 210, 20).build());
+        int x = width / 2 - 150, y = 42, w = 300;
+        addDrawableChild(ButtonWidget.builder(profileText("Potato"), b -> applyProfile("Potato")).dimensions(x,y,w,20).build());
+        addDrawableChild(ButtonWidget.builder(profileText("Balanced"), b -> applyProfile("Balanced")).dimensions(x,y+24,w,20).build());
+        addDrawableChild(ButtonWidget.builder(profileText("Quality"), b -> applyProfile("Quality")).dimensions(x,y+48,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("FPS + Dashboard", CubimisedApi.showFps), b -> { CubimisedApi.showFps=!CubimisedApi.showFps; b.setMessage(toggle("FPS + Dashboard",CubimisedApi.showFps)); save(); }).dimensions(x,y+78,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("Smart FPS Booster", CubimisedApi.smartBoosterEnabled), b -> { CubimisedApi.smartBoosterEnabled=!CubimisedApi.smartBoosterEnabled; b.setMessage(toggle("Smart FPS Booster",CubimisedApi.smartBoosterEnabled)); save(); }).dimensions(x,y+102,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("Entity Culling", CubimisedApi.entityCullingEnabled), b -> { CubimisedApi.entityCullingEnabled=!CubimisedApi.entityCullingEnabled; b.setMessage(toggle("Entity Culling",CubimisedApi.entityCullingEnabled)); save(); }).dimensions(x,y+126,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("Block Entity Culling", CubimisedApi.blockEntityCullingEnabled), b -> { CubimisedApi.blockEntityCullingEnabled=!CubimisedApi.blockEntityCullingEnabled; b.setMessage(toggle("Block Entity Culling",CubimisedApi.blockEntityCullingEnabled)); save(); }).dimensions(x,y+150,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("Reduced Particles", CubimisedApi.reduceParticles), b -> { CubimisedApi.reduceParticles=!CubimisedApi.reduceParticles; b.setMessage(toggle("Reduced Particles",CubimisedApi.reduceParticles)); save(); }).dimensions(x,y+174,w,20).build());
+        addDrawableChild(ButtonWidget.builder(toggle("Dynamic Resolution (experimental)", CubimisedApi.dynamicResolutionEnabled), b -> { CubimisedApi.dynamicResolutionEnabled=!CubimisedApi.dynamicResolutionEnabled; b.setMessage(toggle("Dynamic Resolution (experimental)",CubimisedApi.dynamicResolutionEnabled)); save(); }).dimensions(x,y+198,w,20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("Compatibility: " + compatibilitySummary()), b -> client.setScreen(new CompatibilityScreen(this))).dimensions(x,y+222,w,20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> close()).dimensions(x,y+248,w,20).build());
     }
-
-    private void addToggle(String label, java.util.function.BooleanSupplier getter, java.util.function.Consumer<Boolean> setter, int x, int y) {
-        ButtonWidget button = ButtonWidget.builder(toggleText(label, getter.getAsBoolean()), b -> {
-            boolean next = !getter.getAsBoolean();
-            setter.accept(next);
-            b.setMessage(toggleText(label, next));
-        }).dimensions(x, y, 210, 20).build();
-        addDrawableChild(button);
+    private Text profileText(String p) { return Text.literal((CubimisedApi.performanceProfile.equals(p) ? "✓ " : "") + "Profile: " + p); }
+    private Text toggle(String label, boolean enabled) { return Text.literal(label + ": " + (enabled ? "ON" : "OFF")); }
+    private void applyProfile(String profile) {
+        CubimisedApi.performanceProfile=profile;
+        switch(profile) {
+            case "Potato" -> { CubimisedApi.entityCullingEnabled=true; CubimisedApi.blockEntityCullingEnabled=true; CubimisedApi.reduceParticles=true; CubimisedApi.smartBoosterEnabled=true; CubimisedApi.updateCullingDistance(64); }
+            case "Quality" -> { CubimisedApi.entityCullingEnabled=false; CubimisedApi.blockEntityCullingEnabled=false; CubimisedApi.reduceParticles=false; CubimisedApi.smartBoosterEnabled=false; CubimisedApi.updateCullingDistance(256); }
+            default -> { CubimisedApi.entityCullingEnabled=true; CubimisedApi.blockEntityCullingEnabled=true; CubimisedApi.reduceParticles=false; CubimisedApi.smartBoosterEnabled=true; CubimisedApi.updateCullingDistance(128); }
+        }
+        clearAndInit(); save();
     }
-
-    private Text toggleText(String label, boolean enabled) {
-        return Text.literal(label + ": " + (enabled ? "ON" : "OFF"));
+    private void save() { CubimisedConfig.save(); }
+    private String compatibilitySummary() {
+        List<String> mods=FabricLoader.getInstance().getAllMods().stream().map(m->m.getMetadata().getId().toLowerCase()).filter(id->id.contains("sodium")||id.contains("iris")||id.contains("optifine")||id.contains("indium")||id.contains("canvas")).collect(Collectors.toList());
+        return mods.isEmpty() ? "No known renderer mods detected" : mods.size()+" renderer mod(s) detected";
     }
-
-    @Override public void close() { if (client != null) client.setScreen(parent); }
+    @Override public void render(net.minecraft.client.util.math.MatrixStack matrices,int mouseX,int mouseY,float delta) {
+        renderBackground(matrices);
+        drawCenteredText(matrices,textRenderer,title,width/2,18,0xFFFFFF);
+        super.render(matrices,mouseX,mouseY,delta);
+    }
+    @Override public void close() { CubimisedConfig.save(); if(client!=null) client.setScreen(parent); }
 }
