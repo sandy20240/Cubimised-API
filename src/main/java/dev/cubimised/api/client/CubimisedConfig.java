@@ -28,6 +28,7 @@ public final class CubimisedConfig {
         CubimisedApi.chunkViewDistanceCap = integer("chunkViewDistanceCap", 16, 2, 32);
         CubimisedApi.performanceProfile = P.getProperty("profile", "Balanced");
         CubimisedApi.androidTurboEnabled = bool("androidTurbo", false);
+        CubimisedApi.performanceMonitorEnabled = bool("performanceMonitor", false);
     }
     private static boolean bool(String k, boolean d) { return Boolean.parseBoolean(P.getProperty(k, Boolean.toString(d))); }
     private static int integer(String k, int d, int min, int max) { try { return Math.max(min, Math.min(max, Integer.parseInt(P.getProperty(k, Integer.toString(d))))); } catch (NumberFormatException e) { return d; } }
@@ -42,6 +43,7 @@ public final class CubimisedConfig {
         P.setProperty("chunkViewDistanceCap", Integer.toString(CubimisedApi.chunkViewDistanceCap));
         P.setProperty("profile", CubimisedApi.performanceProfile);
         P.setProperty("androidTurbo", Boolean.toString(CubimisedApi.androidTurboEnabled));
+        P.setProperty("performanceMonitor", Boolean.toString(CubimisedApi.performanceMonitorEnabled));
         try { Files.createDirectories(FILE.getParent()); try (OutputStream out = Files.newOutputStream(FILE)) { P.store(out, "Cubimised API client settings"); } }
         catch (IOException e) { System.err.println("[Cubimised] Config save failed: " + e.getMessage()); }
     }
