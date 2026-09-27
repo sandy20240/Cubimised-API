@@ -175,6 +175,18 @@ Cubimised API is maintained with the help of the admin team:
 
 Thank you to everyone contributing to the project and helping shape Cubimised API.
 
+## Discord Staff Team
+
+The Cubimised API Discord is supported by the following staff members:
+
+- **evenesxcia**
+- **sachen**
+- **gg_salmon**
+- **superturtle1883**
+- **fredytb**
+- **jomppa**
+- **alixlemouton**
+
 ## Contributing and feedback
 
 Bug reports, suggestions, and testing feedback are welcome through [GitHub Issues](https://github.com/sandy20240/Cubimised-API/issues). When reporting a problem, include:
