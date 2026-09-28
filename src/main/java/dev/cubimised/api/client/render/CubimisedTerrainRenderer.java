@@ -1,12 +1,10 @@
 package dev.cubimised.api.client.render;
 
-import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.ShaderProgram;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.util.math.ChunkPos;
 import org.joml.Matrix4f;
 import java.util.ArrayDeque;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
