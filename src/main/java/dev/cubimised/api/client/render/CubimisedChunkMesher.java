@@ -45,11 +45,11 @@ public final class CubimisedChunkMesher {
                         builder.begin(layer.getDrawMode(), layer.getVertexFormat());
                     }
 
-                    matrices.push();
-                    matrices.translate(-origin.getX(), -origin.getY(), -origin.getZ());
+                    // Keep vertices in world coordinates. WorldRenderer's render-layer
+                    // matrix already contains the camera translation, so the GPU path
+                    // can submit these buffers directly under the active RenderLayer. 
                     renderer.renderBlock(state, pos, region, matrices, builder, true,
                             Random.create(state.getRenderingSeed(pos)));
-                    matrices.pop();
                 }
             }
         }
