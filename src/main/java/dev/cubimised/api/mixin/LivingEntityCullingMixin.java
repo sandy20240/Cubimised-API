@@ -6,6 +6,7 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.registry.Registries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -34,7 +35,11 @@ public abstract class LivingEntityCullingMixin {
         // Scale the render distance for low-end profiles without touching entity simulation.
         // Squared-distance math avoids an expensive square-root for every rendered entity.
         double density = Math.max(10.0, Math.min(100.0, CubimisedApi.entityDensity)) / 100.0;
-        double distance = CubimisedApi.cullingDistanceBlocks * density;
+        String entityId = Registries.ENTITY_TYPE.getId(entity.getType()).toString();
+        int customDistance = CubimisedApi.getCustomEntityCullingDistance(entityId, -1);
+        double distance = customDistance >= 0
+                ? customDistance
+                : CubimisedApi.cullingDistanceBlocks * density;
         if (entity.squaredDistanceTo(client.player) > distance * distance) {
             ci.cancel();
         }
