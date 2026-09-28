@@ -31,8 +31,8 @@ public abstract class WorldRendererMixin {
             double cameraZ,
             Matrix4f positionMatrix,
             CallbackInfo ci) {
-        CubimisedRenderCore.renderTerrainLayer(renderLayer, cameraX, cameraY, cameraZ);
-        if (CubimisedRenderCore.shouldTakeoverTerrain()) {
+        if (CubimisedRenderCore.shouldTakeoverTerrain()
+                && CubimisedRenderCore.renderTerrainLayer(renderLayer, cameraX, cameraY, cameraZ)) {
             ci.cancel();
         }
     }
