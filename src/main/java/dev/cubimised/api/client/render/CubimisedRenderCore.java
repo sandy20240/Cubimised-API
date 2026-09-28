@@ -13,6 +13,7 @@ import net.minecraft.client.render.Camera;
 public final class CubimisedRenderCore {
     private static final RenderScheduler SCHEDULER = new RenderScheduler();
     private static final RenderStats STATS = new RenderStats();
+    private static final CubimisedTerrainRenderer TERRAIN = new CubimisedTerrainRenderer();
     private static boolean initialized;
 
     private CubimisedRenderCore() {}
@@ -39,5 +40,9 @@ public final class CubimisedRenderCore {
 
     public static RenderStats stats() {
         return STATS;
+    }
+
+    public static CubimisedTerrainRenderer terrain() {
+        return TERRAIN;
     }
 }
