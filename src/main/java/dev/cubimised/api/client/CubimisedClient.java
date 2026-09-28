@@ -1,6 +1,7 @@
 package dev.cubimised.api.client;
 
 import dev.cubimised.api.CubimisedApi;
+import dev.cubimised.api.client.render.CubimisedRenderCore;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -42,6 +43,7 @@ public final class CubimisedClient implements ClientModInitializer {
 
     @Override public void onInitializeClient() {
         CubimisedConfig.load();
+        CubimisedRenderCore.init();
         openSettingsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.cubimised_api.performance_settings", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O,
                 "category.cubimised_api"));
