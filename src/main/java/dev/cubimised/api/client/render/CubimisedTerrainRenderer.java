@@ -55,6 +55,25 @@ public final class CubimisedTerrainRenderer implements AutoCloseable {
         pool.offerLast(buffer);
     }
 
+    /** Draws Cubimised buffers while the vanilla RenderLayer state/shader is active. */
+    public boolean renderLayer(RenderLayer layer) {
+        if (layer == null || chunks.isEmpty()) return false;
+        boolean drew = false;
+        layer.startDrawing();
+        try {
+            for (ChunkGpuData chunk : chunks.values()) {
+                CubimisedGpuBuffer buffer = chunk.buffers.get(layer);
+                if (buffer == null || !buffer.isUploaded()) continue;
+                buffer.draw();
+                drawCalls++;
+                drew = true;
+            }
+        } finally {
+            layer.endDrawing();
+        }
+        return drew;
+    }
+
     public void submit(RenderLayer layer, Matrix4f view, Matrix4f projection, ShaderProgram shader) {
         if (layer == null) return;
         layer.startDrawing();
@@ -69,6 +88,33 @@ public final class CubimisedTerrainRenderer implements AutoCloseable {
         } finally {
             layer.endDrawing();
         }
+    }
+
+    /** Replaces a single 16x16x16 section without touching neighboring sections. */
+    public void replaceSection(ChunkPos pos, int sectionY, CubimisedChunkRenderData data) {
+        if (pos == null || data == null) return;
+        long key = sectionKey(pos.toLong(), sectionY);
+        ChunkGpuData old = chunks.remove(key);
+        if (old != null) old.close(pool);
+
+        ChunkGpuData gpu = new ChunkGpuData(data.origin());
+        for (Map.Entry<RenderLayer, net.minecraft.client.render.BufferBuilder.BuiltBuffer> entry : data.meshes().entrySet()) {
+            CubimisedGpuBuffer buffer = pool.pollFirst();
+            if (buffer == null) buffer = new CubimisedGpuBuffer();
+            buffer.upload(new CubimisedChunkMesh(entry.getValue()));
+            if (buffer.isUploaded()) {
+                gpu.buffers.put(entry.getKey(), buffer);
+                uploadedBytes += entry.getValue().getVertexBuffer().remaining();
+            } else {
+                pool.offerFirst(buffer);
+            }
+        }
+        data.release();
+        chunks.put(key, gpu);
+    }
+
+    private static long sectionKey(long chunkKey, int sectionY) {
+        return chunkKey ^ (0x9E3779B97F4A7C15L * (long) sectionY);
     }
 
     public void clearChunk(ChunkPos pos) {
