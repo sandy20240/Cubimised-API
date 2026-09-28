@@ -25,8 +25,27 @@ public final class CubimisedConfig {
         CubimisedApi.dynamicResolutionEnabled = bool("dynamicResolution", false);
         CubimisedApi.smartBoosterEnabled = bool("smartBooster", true);
         CubimisedApi.entityDensity = integer("entityDensity", 100, 10, 100);
+        loadCustomEntityDistances();
         CubimisedApi.chunkViewDistanceCap = integer("chunkViewDistanceCap", 16, 2, 32);
         CubimisedApi.performanceProfile = P.getProperty("profile", "Balanced");
+    }
+    private static void loadCustomEntityDistances() {
+        CubimisedApi.customEntityCullingDistances.clear();
+        String raw = P.getProperty("customEntityCulling", "").trim();
+        if (raw.isEmpty()) return;
+        for (String entry : raw.split(";")) {
+            String[] parts = entry.trim().split("=", 2);
+            if (parts.length != 2) continue;
+            try {
+                int distance = Math.max(4, Math.min(512, Integer.parseInt(parts[1].trim())));
+                if (!parts[0].trim().isEmpty()) CubimisedApi.customEntityCullingDistances.put(parts[0].trim(), distance);
+            } catch (NumberFormatException ignored) { }
+        }
+    }
+    private static String customEntityDistances() {
+        return CubimisedApi.customEntityCullingDistances.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .sorted().reduce((a, b) -> a + ";" + b).orElse("");
     }
     private static boolean bool(String k, boolean d) { return Boolean.parseBoolean(P.getProperty(k, Boolean.toString(d))); }
     private static int integer(String k, int d, int min, int max) { try { return Math.max(min, Math.min(max, Integer.parseInt(P.getProperty(k, Integer.toString(d))))); } catch (NumberFormatException e) { return d; } }
@@ -38,6 +57,7 @@ public final class CubimisedConfig {
         P.setProperty("dynamicResolution", Boolean.toString(CubimisedApi.dynamicResolutionEnabled));
         P.setProperty("smartBooster", Boolean.toString(CubimisedApi.smartBoosterEnabled));
         P.setProperty("entityDensity", Integer.toString(CubimisedApi.entityDensity));
+        P.setProperty("customEntityCulling", customEntityDistances());
         P.setProperty("chunkViewDistanceCap", Integer.toString(CubimisedApi.chunkViewDistanceCap));
         P.setProperty("profile", CubimisedApi.performanceProfile);
         try { Files.createDirectories(FILE.getParent()); try (OutputStream out = Files.newOutputStream(FILE)) { P.store(out, "Cubimised API client settings"); } }
