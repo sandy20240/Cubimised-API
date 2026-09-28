@@ -39,6 +39,10 @@ public final class CubimisedRenderCore {
         STATS.endFrame();
     }
 
+    public static void markDirty(net.minecraft.util.math.BlockPos pos) {
+        if (pos != null) REBUILDS.markDirty(new net.minecraft.util.math.ChunkPos(pos));
+    }
+
     public static RenderScheduler scheduler() { return SCHEDULER; }
     public static RenderStats stats() { return STATS; }
     public static CubimisedTerrainRenderer terrain() { return TERRAIN; }
