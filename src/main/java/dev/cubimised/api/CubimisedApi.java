@@ -8,6 +8,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Common API. Uses Fabric's 1.20.1 PacketByteBuf networking API. */
@@ -31,6 +32,12 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile double maxCullDistSq = 128.0 * 128.0;
     public static volatile boolean smartBoosterEnabled = true;
     public static volatile int entityDensity = 100;
+    /** Optional per-entity render-distance overrides, keyed by registry ID. */
+    public static final Map<String, Integer> customEntityCullingDistances = new ConcurrentHashMap<>();
+
+    public static int getCustomEntityCullingDistance(String entityId, int fallback) {
+        return customEntityCullingDistances.getOrDefault(entityId, fallback);
+    }
     public static volatile int chunkViewDistanceCap = 16;
     public static volatile String performanceProfile = "Balanced";
     public static volatile double currentFrameMs = 16.67;
