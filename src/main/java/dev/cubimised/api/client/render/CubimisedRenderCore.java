@@ -11,6 +11,7 @@ public final class CubimisedRenderCore {
     private static final CubimisedChunkRebuildSystem REBUILDS = new CubimisedChunkRebuildSystem();
     private static boolean initialized;
     private static int frame;
+    private static Camera currentCamera;
 
     private CubimisedRenderCore() {}
 
@@ -20,6 +21,7 @@ public final class CubimisedRenderCore {
 
     public static void beginFrame(MinecraftClient client, Camera camera) {
         if (!initialized || client.world == null || camera == null) return;
+        currentCamera = camera;
         STATS.beginFrame();
         SCHEDULER.beginFrame();
         REBUILDS.beginFrame();
@@ -27,7 +29,7 @@ public final class CubimisedRenderCore {
         // Keep the rebuild queue populated around the camera without rebuilding
         // the whole view every frame. The queue deduplicates chunk positions.
         if ((frame++ & 15) == 0) {
-            REBUILDS.enqueueAround(camera, Math.min(4, Math.max(1, client.options.getViewDistance().getValue() / 4)));
+            REBUILDS.enqueueAround(camera, Math.max(2, Math.min(16, client.options.getViewDistance().getValue())));
         }
         int rebuilt = REBUILDS.process(client, TERRAIN, CubimisedRenderConfig.rebuildBudget());
         STATS.recordChunkPreparationPass(rebuilt);
@@ -41,6 +43,18 @@ public final class CubimisedRenderCore {
 
     public static void markDirty(net.minecraft.util.math.BlockPos pos) {
         if (pos != null) REBUILDS.markDirty(new net.minecraft.util.math.ChunkPos(pos));
+    }
+
+    public static boolean shouldTakeoverTerrain() {
+        if (!CubimisedRenderConfig.customTerrainEnabled() || currentCamera == null) return false;
+        MinecraftClient client = MinecraftClient.getInstance();
+        int radius = Math.max(2, Math.min(16, client.options.getViewDistance().getValue()));
+        return TERRAIN.hasCoverage(currentCamera, radius);
+    }
+
+    public static boolean renderTerrainLayer(net.minecraft.client.render.RenderLayer layer,
+                                              double cameraX, double cameraY, double cameraZ) {
+        return TERRAIN.renderLayer(layer, cameraX, cameraY, cameraZ);
     }
 
     public static RenderScheduler scheduler() { return SCHEDULER; }
