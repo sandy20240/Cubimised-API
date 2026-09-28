@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-/** Camera-prioritized dirty chunk rebuild queue. */
+/** Camera-prioritized dirty chunk-section rebuild queue. */
 public final class CubimisedChunkRebuildSystem {
     private final PriorityQueue<Work> queue = new PriorityQueue<>((a,b) -> Double.compare(a.distanceSq, b.distanceSq));
     private final Set<Long> queued = new HashSet<>();
@@ -45,11 +45,19 @@ public final class CubimisedChunkRebuildSystem {
             ClientWorld world = client.world;
             int minY = world.getBottomY();
             int maxY = world.getTopYInclusive();
-            BlockPos origin = new BlockPos(work.pos.getStartX(), minY, work.pos.getStartZ());
-            BlockPos end = new BlockPos(work.pos.getEndX(), maxY, work.pos.getEndZ());
-            ChunkRendererRegion region = regions.build(world, origin, end, 1);
-            if (region != null) {
-                terrain.replaceChunk(work.pos, CubimisedChunkMesher.mesh(region, origin, minY, maxY));
+
+            // Build 16x16x16 sections rather than one giant world-height mesh.
+            // This is the key granularity needed for cheap invalidation and culling.
+            for (int sectionMin = minY; sectionMin <= maxY; sectionMin += 16) {
+                int sectionMax = Math.min(maxY, sectionMin + 15);
+                BlockPos origin = new BlockPos(work.pos.getStartX(), sectionMin, work.pos.getStartZ());
+                BlockPos end = new BlockPos(work.pos.getEndX(), sectionMax, work.pos.getEndZ());
+                ChunkRendererRegion region = regions.build(world, origin, end, 1);
+                if (region != null) {
+                    int sectionY = sectionMin >> 4;
+                    terrain.replaceSection(work.pos, sectionY,
+                            CubimisedChunkMesher.mesh(region, origin, sectionMin, sectionMax));
+                }
             }
             processed++;
         }
