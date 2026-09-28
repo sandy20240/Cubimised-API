@@ -31,7 +31,10 @@ public abstract class LivingEntityCullingMixin {
             return;
         }
 
-        double distance = CubimisedApi.cullingDistanceBlocks * (CubimisedApi.entityDensity / 100.0);
+        // Scale the render distance for low-end profiles without touching entity simulation.
+        // Squared-distance math avoids an expensive square-root for every rendered entity.
+        double density = Math.max(10.0, Math.min(100.0, CubimisedApi.entityDensity)) / 100.0;
+        double distance = CubimisedApi.cullingDistanceBlocks * density;
         if (entity.squaredDistanceTo(client.player) > distance * distance) {
             ci.cancel();
         }
