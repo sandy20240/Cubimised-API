@@ -24,6 +24,8 @@ public final class CubimisedApi implements ModInitializer {
     public static volatile boolean entityCullingEnabled = true;
     public static volatile boolean showFps = true;
     public static volatile boolean reduceParticles = false;
+    /** Runtime-only particle throttling controlled by Smart Booster; does not overwrite the user's saved preference. */
+    public static volatile boolean autoReduceParticles = false;
     public static volatile boolean blockEntityCullingEnabled = true;
     public static volatile boolean dynamicResolutionEnabled = false;
     public static volatile double maxCullDistSq = 128.0 * 128.0;
