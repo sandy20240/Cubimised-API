@@ -22,7 +22,7 @@ public abstract class ParticleReductionMixin {
             double velocityZ,
             CallbackInfoReturnable<Particle> cir
     ) {
-        if (CubimisedApi.reduceParticles && (System.nanoTime() & 3L) != 0L) {
+        if ((CubimisedApi.reduceParticles || CubimisedApi.autoReduceParticles) && (System.nanoTime() & 3L) != 0L) {
             cir.setReturnValue(null);
         }
     }
