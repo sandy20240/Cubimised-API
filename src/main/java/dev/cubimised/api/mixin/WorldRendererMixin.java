@@ -7,6 +7,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,6 +34,21 @@ public abstract class WorldRendererMixin {
             Matrix4f projectionMatrix,
             CallbackInfo ci) {
         CubimisedRenderCore.beginFrame(MinecraftClient.getInstance(), camera);
+    }
+
+    @Inject(method = "renderLayer", at = @At("HEAD"), cancellable = true)
+    private void cubimised$renderTerrainLayer(
+            RenderLayer renderLayer,
+            MatrixStack matrices,
+            double cameraX,
+            double cameraY,
+            double cameraZ,
+            Matrix4f positionMatrix,
+            CallbackInfo ci) {
+        if (CubimisedRenderCore.shouldTakeoverTerrain()
+                && CubimisedRenderCore.renderTerrainLayer(renderLayer, cameraX, cameraY, cameraZ)) {
+            ci.cancel();
+        }
     }
 
     @Inject(method = "render", at = @At("RETURN"))
