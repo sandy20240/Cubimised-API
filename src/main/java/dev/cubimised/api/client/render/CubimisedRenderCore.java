@@ -29,7 +29,7 @@ public final class CubimisedRenderCore {
         if ((frame++ & 15) == 0) {
             REBUILDS.enqueueAround(camera, Math.min(4, Math.max(1, client.options.getViewDistance().getValue() / 4)));
         }
-        int rebuilt = REBUILDS.process(client, TERRAIN, 1);
+        int rebuilt = REBUILDS.process(client, TERRAIN, CubimisedRenderConfig.rebuildBudget());
         STATS.recordChunkPreparationPass(rebuilt);
     }
 
