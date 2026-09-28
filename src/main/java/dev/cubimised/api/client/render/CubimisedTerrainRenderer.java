@@ -1,6 +1,7 @@
 package dev.cubimised.api.client.render;
 
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.util.math.ChunkPos;
 import org.joml.Matrix4f;
@@ -10,8 +11,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Comparator;
-import net.minecraft.client.render.RenderLayer;
-
 /**
  * Cubimised terrain GPU backend.
  *
@@ -177,7 +176,7 @@ public final class CubimisedTerrainRenderer implements AutoCloseable {
         for (ChunkGpuData data : chunks.values()) data.close(pool);
         chunks.clear();
         coveredChunks.clear();
-        while (!pool.isEmpty() pool.poll().close();
+        while (!pool.isEmpty()) pool.poll().close();
     }
 
     private static final class ChunkGpuData {
