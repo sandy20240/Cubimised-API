@@ -23,6 +23,10 @@ public final class CubimisedClient implements ClientModInitializer {
     private static double smoothedFrameMs = 1000.0 / 60.0;
     private static int ticks;
     private static KeyBinding openSettingsKey;
+    private static int boosterViewDistance = -1;
+    private static int lastAppliedViewDistance = -1;
+    private static long lastViewDistanceAdjustmentNanos;
+    private static boolean boosterWasEnabled;
     private static boolean welcomeSeen = Files.exists(FabricLoader.getInstance().getConfigDir().resolve("cubimised-api-welcome.txt"));
 
     public static void markWelcomeSeen() {
@@ -58,9 +62,7 @@ public final class CubimisedClient implements ClientModInitializer {
                 client.setScreen(new WelcomeScreen());
                 return;
             }
-            if (CubimisedApi.smartBoosterEnabled && client.options.getViewDistance().getValue() > SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap)) {
-                client.options.getViewDistance().setValue(SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap));
-            }
+            updateAdaptiveViewDistance(client);
             if (client.player == null || client.world == null) return;
             if (++ticks % 40 == 0) {
                 var packet = PacketByteBufs.create();
@@ -68,6 +70,56 @@ public final class CubimisedClient implements ClientModInitializer {
                 ClientPlayNetworking.send(CubimisedApi.CULLING_PREFERENCE_PACKET, packet);
             }
         });
+    }
+
+    /**
+     * Runtime-only view-distance governor for low-end systems.
+     * It changes the client setting only while Smart Booster is enabled and
+     * restores the user's original value when the booster is disabled.
+     */
+    private static void updateAdaptiveViewDistance(MinecraftClient client) {
+        int userDistance = client.options.getViewDistance().getValue();
+        int cap = SodiumCompat.recommendedViewDistanceCap(CubimisedApi.chunkViewDistanceCap);
+
+        if (!CubimisedApi.smartBoosterEnabled) {
+            if (boosterWasEnabled && boosterViewDistance >= 2 && userDistance != boosterViewDistance) {
+                client.options.getViewDistance().setValue(boosterViewDistance);
+            }
+            boosterViewDistance = -1;
+            lastAppliedViewDistance = -1;
+            boosterWasEnabled = false;
+            return;
+        }
+
+        if (!boosterWasEnabled) {
+            boosterViewDistance = Math.max(2, userDistance);
+            boosterWasEnabled = true;
+        }
+
+        int current = client.options.getViewDistance().getValue();
+        int maximum = Math.max(2, Math.min(boosterViewDistance, cap));
+        if (current > maximum) {
+            client.options.getViewDistance().setValue(maximum);
+            lastAppliedViewDistance = maximum;
+            return;
+        }
+
+        long now = System.nanoTime();
+        if (now - lastViewDistanceAdjustmentNanos < 1_000_000_000L) return;
+        double targetMs = 1000.0 / Math.max(20, CubimisedApi.targetFps);
+
+        // Reduce chunks conservatively under sustained load, then restore them slowly.
+        if (smoothedFrameMs > targetMs * 1.20 && current > 4) {
+            int next = Math.max(4, current - 2);
+            client.options.getViewDistance().setValue(Math.min(next, maximum));
+            lastViewDistanceAdjustmentNanos = now;
+            lastAppliedViewDistance = next;
+        } else if (smoothedFrameMs < targetMs * 0.72 && current < maximum) {
+            int next = Math.min(maximum, current + 1);
+            client.options.getViewDistance().setValue(next);
+            lastViewDistanceAdjustmentNanos = now;
+            lastAppliedViewDistance = next;
+        }
     }
 
     /** Called from the client render mixin once per frame. */
