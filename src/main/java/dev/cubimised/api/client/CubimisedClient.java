@@ -79,10 +79,19 @@ public final class CubimisedClient implements ClientModInitializer {
             Runtime runtime = Runtime.getRuntime();
             CubimisedApi.usedMemoryMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
             CubimisedApi.maxMemoryMb = runtime.maxMemory() / (1024 * 1024);
-            if (CubimisedApi.smartBoosterEnabled && frameMs > 1000.0 / Math.max(20, CubimisedApi.targetFps) * 1.3) {
-                CubimisedApi.reduceParticles = true;
-            }
             smoothedFrameMs = smoothedFrameMs * 0.9 + frameMs * 0.1;
+            // Use hysteresis so the particle throttle does not flicker around the target frame time.
+            // Keep this runtime-only: never overwrite the user's saved/manual particle preference.
+            if (CubimisedApi.smartBoosterEnabled) {
+                double targetMs = 1000.0 / Math.max(20, CubimisedApi.targetFps);
+                if (smoothedFrameMs > targetMs * 1.12) {
+                    CubimisedApi.autoReduceParticles = true;
+                } else if (smoothedFrameMs < targetMs * 0.88) {
+                    CubimisedApi.autoReduceParticles = false;
+                }
+            } else {
+                CubimisedApi.autoReduceParticles = false;
+            }
             if (!CubimisedApi.dynamicResolutionEnabled) {
                 CubimisedApi.renderScale = 1.0;
                 lastFrameNanos = now;
