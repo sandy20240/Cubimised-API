@@ -44,7 +44,7 @@ public final class CubimisedChunkRebuildSystem {
             queued.remove(work.pos.toLong());
             ClientWorld world = client.world;
             int minY = world.getBottomY();
-            int maxY = world.getTopYInclusive();
+            int maxY = world.getTopY() - 1;
 
             // Build 16x16x16 sections rather than one giant world-height mesh.
             // This is the key granularity needed for cheap invalidation and culling.
