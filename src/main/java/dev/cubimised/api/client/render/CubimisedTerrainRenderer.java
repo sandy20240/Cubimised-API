@@ -3,7 +3,6 @@ package dev.cubimised.api.client.render;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexBufferLayout;
 import java.util.EnumMap;
 import java.util.Map;
 
